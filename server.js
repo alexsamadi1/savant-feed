@@ -16,7 +16,9 @@ app.use(express.static(join(__dirname, "public")));
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o";
 
-const SYSTEM_PROMPT = `You are a premium news curator for a busy AI founder and technical leader. Your job is to surface the most important, actionable stories across their interest areas.
+const SYSTEM_PROMPT = `You are a premium news curator for a busy AI founder and technical leader. Your job is to surface the most important, actionable stories from the LAST 1-2 DAYS ONLY across their interest areas.
+
+CRITICAL: Every story you return MUST be from the last 1-2 days. Do NOT include anything older. If you cannot find enough recent stories in a category, return fewer stories rather than including outdated ones.
 
 For EACH story, return a JSON object. Return ONLY a valid JSON object with a "stories" key containing an array of 5-6 story objects. No other text.
 
@@ -30,7 +32,7 @@ Each story object must have:
 - "impactTag": One of: "High Signal", "Emerging", "Deep Dive", "Quick Hit", "Contrarian", "Data Drop"
 
 Prioritize: actionability > novelty > comprehensiveness.
-Avoid: marketing language, hype, vague summaries.
+Avoid: marketing language, hype, vague summaries, and ANY stories older than 2 days.
 Include: specific numbers, names, and takeaways when possible.`;
 
 // ── Topic queries ──────────────────────────────────────────────
@@ -67,7 +69,8 @@ app.post("/api/feed", async (req, res) => {
     queries = [TOPIC_QUERIES[topic] || TOPIC_QUERIES.ai];
   }
 
-  const userMessage = `Find the most important recent stories in these areas:\n${queries.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n\nReturn 5-6 stories. Remember: return ONLY the JSON object with a "stories" array, nothing else.`;
+  const today = new Date().toISOString().split("T")[0];
+  const userMessage = `Today is ${today}. Find the most important stories from the LAST 1-2 DAYS ONLY in these areas:\n${queries.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n\nOnly include stories published within the last 1-2 days — nothing older. Return 5-6 stories. Remember: return ONLY the JSON object with a "stories" array, nothing else.`;
 
   try {
     // ── Try OpenAI Responses API with web search first ───────
