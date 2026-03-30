@@ -1,7 +1,7 @@
 {
   "name": "savant-feed",
-  "version": "1.0.0",
-  "description": "AI-curated news feed — your personal intelligence briefing",
+  "version": "2.0.0",
+  "description": "AI-curated news feed — real sources, real stories",
   "main": "server.js",
   "type": "module",
   "scripts": {
