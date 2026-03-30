@@ -71,7 +71,8 @@ app.post("/api/feed", async (req, res) => {
     queries = [TOPIC_QUERIES[topic] || TOPIC_QUERIES.ai];
   }
 
-  const userMessage = `Find the most important stories from the LAST 24-48 HOURS in these areas:\n${queries.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n\nToday's date is ${new Date().toISOString().split("T")[0]}. Only include very recent stories from top-tier, reputable sources — peer-reviewed research, major news outlets, official reports. Return 5-6 stories. Return ONLY the JSON object with a "stories" array, nothing else.`;
+  const categoryRule = topic !== "all" ? `\n\nAll stories must have category set to "${topic}".` : "";
+  const userMessage = `Find the most important stories from the LAST 24-48 HOURS in these areas:\n${queries.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n\nToday's date is ${new Date().toISOString().split("T")[0]}. Only include very recent stories from top-tier, reputable sources — peer-reviewed research, major news outlets, official reports. Return 5-6 stories. Return ONLY the JSON object with a "stories" array, nothing else.${categoryRule}`;
 
   try {
     // ── Try OpenAI Responses API with web search first ───────

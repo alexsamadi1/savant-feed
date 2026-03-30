@@ -480,9 +480,6 @@
       const savedIds = new Set(savedStories.map(s => s.id));
       let list = showSaved ? savedStories : stories;
 
-      if (activeTopic !== "all" && !showSaved) {
-        list = list.filter(s => s.category === activeTopic);
-      }
       if (activeTopic !== "all" && showSaved) {
         list = list.filter(s => s.category === activeTopic);
       }
