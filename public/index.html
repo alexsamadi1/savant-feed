@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Savant Feed">
+  <meta name="theme-color" content="#0d0d0f">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <title>Savant Feed</title>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0d0d0f;
+      --surface: rgba(255,255,255,0.02);
+      --border: rgba(255,255,255,0.06);
+      --text-primary: #f0ede6;
+      --text-secondary: rgba(255,255,255,0.55);
+      --text-tertiary: rgba(255,255,255,0.35);
+      --text-muted: rgba(255,255,255,0.25);
+      --accent: #f59e0b;
+      --accent-bg: rgba(245,158,11,0.12);
+      --accent-border: rgba(245,158,11,0.25);
+      --mono: 'DM Mono', monospace;
+      --serif: 'Newsreader', Georgia, serif;
+      --sans: 'Source Sans 3', sans-serif;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+
+    #app {
+      max-width: 520px;
+      margin: 0 auto;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    /* ── Header ─────────────────────────────── */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13,13,15,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding-top: var(--safe-top);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 12px;
+    }
+
+    .logo {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .logo-icon { color: var(--accent); margin-right: 6px; }
+
+    .header-actions { display: flex; gap: 8px; }
+
+    .btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: rgba(255,255,255,0.5);
+      font-family: var(--mono);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-saved-active {
+      background: var(--accent-bg);
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+
+    /* ── Tabs ───────────────────────────────── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 0 16px 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 20px;
+      padding: 5px 14px;
+      color: rgba(255,255,255,0.4);
+      font-family: var(--mono);
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .tab:hover { color: rgba(255,255,255,0.6); }
+
+    .tab-active {
+      background: var(--accent-bg);
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+
+    .tab-icon { margin-right: 4px; font-size: 10px; }
+
+    /* ── Story Card ─────────────────────────── */
+    .story {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .story:hover { background: var(--surface); }
+    .story:active { background: rgba(255,255,255,0.04); }
+
+    .story-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      flex-wrap: wrap;
+    }
+
+    .story-meta-icon { opacity: 0.4; }
+    .story-meta-cat { color: var(--text-tertiary); }
+    .story-meta-sep { color: rgba(255,255,255,0.15); }
+    .story-meta-source { color: rgba(255,255,255,0.3); }
+    .story-meta-time { color: var(--text-muted); }
+
+    .impact-tag {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      margin-left: auto;
+    }
+
+    .story-headline {
+      font-family: var(--serif);
+      font-size: 19px;
+      font-weight: 600;
+      line-height: 1.35;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .story-summary {
+      font-family: var(--sans);
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .story-summary.expanded {
+      display: block;
+      -webkit-line-clamp: unset;
+      overflow: visible;
+    }
+
+    .story-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .story-link {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .story-link:hover { color: rgba(255,255,255,0.6); }
+
+    .save-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      padding: 0;
+      transition: color 0.2s;
+    }
+
+    .save-btn:hover { color: rgba(255,255,255,0.6); }
+    .save-btn.saved { color: var(--accent); }
+
+    .story-time {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      margin-left: auto;
+    }
+
+    /* ── States ──────────────────────────────── */
+    .loading-state, .empty-state, .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 20px;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 2px solid rgba(245,158,11,0.15);
+      border-top: 2px solid var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-msg {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-tertiary);
+      letter-spacing: 0.05em;
+      transition: opacity 0.3s;
+    }
+
+    .empty-icon {
+      font-size: 32px;
+      opacity: 0.3;
+    }
+
+    .empty-text, .error-text {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 0.05em;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .error-box {
+      background: rgba(255,255,255,0.04);
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      max-height: 200px;
+      overflow: auto;
+      word-break: break-word;
+      cursor: pointer;
+    }
+
+    .bottom-spacer { height: 60px; padding-bottom: var(--safe-bottom); }
+
+    /* ── Pull to refresh indicator ───────────── */
+    .pull-indicator {
+      text-align: center;
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .pull-indicator.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="header">
+      <div class="header-top">
+        <div class="logo">
+          <span class="logo-icon">✦</span>Savant Feed
+        </div>
+        <div class="header-actions">
+          <button class="btn" id="savedBtn" onclick="toggleSaved()">★ <span id="savedCount">0</span></button>
+          <button class="btn" id="refreshBtn" onclick="fetchStories()">↻ Refresh</button>
+        </div>
+      </div>
+      <div class="tabs" id="tabs"></div>
+    </div>
+    <div class="pull-indicator" id="pullIndicator">↓ Release to refresh</div>
+    <div id="content"></div>
+    <div class="bottom-spacer"></div>
+  </div>
+
+  <script>
+    // ── Config ──────────────────────────────────────────────────
+    const TOPICS = [
+      { id: "all", label: "For You", icon: "✦" },
+      { id: "ai", label: "AI & LLMs", icon: "⬡" },
+      { id: "startups", label: "Startups", icon: "△" },
+      { id: "productivity", label: "Productivity", icon: "▣" },
+      { id: "news", label: "World News", icon: "◆" },
+      { id: "relationships", label: "EQ & Relationships", icon: "◈" },
+      { id: "health", label: "Health", icon: "◎" },
+    ];
+
+    const TAG_COLORS = {
+      "High Signal": "#22c55e",
+      "Emerging": "#a78bfa",
+      "Deep Dive": "#3b82f6",
+      "Quick Hit": "#f59e0b",
+      "Contrarian": "#ef4444",
+      "Data Drop": "#06b6d4",
+    };
+
+    const CATEGORY_ICONS = {
+      ai: "⬡", startups: "△", productivity: "▣",
+      news: "◆", relationships: "◈", health: "◎",
+    };
+
+    const LOADING_MESSAGES = [
+      "Scanning the signal…",
+      "Filtering the noise…",
+      "Curating your briefing…",
+      "Extracting what matters…",
+      "Almost there…",
+    ];
+
+    // ── State ───────────────────────────────────────────────────
+    let activeTopic = "all";
+    let stories = [];
+    let savedStories = JSON.parse(localStorage.getItem("savant-saved") || "[]");
+    let showSaved = false;
+    let loading = false;
+    let expandedId = null;
+    let loadingMsgIndex = 0;
+    let loadingInterval = null;
+
+    // ── Init ────────────────────────────────────────────────────
+    function init() {
+      renderTabs();
+      updateSavedCount();
+
+      // Load cache
+      const cached = JSON.parse(localStorage.getItem("savant-cache") || "null");
+      if (cached && cached.stories?.length && Date.now() - cached.time < 3600000) {
+        stories = cached.stories;
+        renderStories();
+      } else {
+        fetchStories();
+      }
+    }
+
+    // ── Tabs ────────────────────────────────────────────────────
+    function renderTabs() {
+      const tabsEl = document.getElementById("tabs");
+      tabsEl.innerHTML = TOPICS.map(t =>
+        `<button class="tab ${activeTopic === t.id && !showSaved ? 'tab-active' : ''}"
+                 onclick="selectTopic('${t.id}')">
+          <span class="tab-icon">${t.icon}</span>${t.label}
+        </button>`
+      ).join("");
+    }
+
+    function selectTopic(id) {
+      activeTopic = id;
+      showSaved = false;
+      expandedId = null;
+      renderTabs();
+      fetchStories();
+    }
+
+    function toggleSaved() {
+      showSaved = !showSaved;
+      expandedId = null;
+      document.getElementById("savedBtn").className = showSaved ? "btn btn-saved-active" : "btn";
+      renderTabs();
+      renderStories();
+    }
+
+    // ── Fetch ───────────────────────────────────────────────────
+    async function fetchStories() {
+      if (loading) return;
+      loading = true;
+      expandedId = null;
+
+      // Show loading
+      loadingMsgIndex = 0;
+      renderLoading();
+      loadingInterval = setInterval(() => {
+        loadingMsgIndex = (loadingMsgIndex + 1) % LOADING_MESSAGES.length;
+        const el = document.getElementById("loadingMsg");
+        if (el) el.textContent = LOADING_MESSAGES[loadingMsgIndex];
+      }, 2200);
+
+      document.getElementById("refreshBtn").disabled = true;
+      document.getElementById("refreshBtn").textContent = "···";
+
+      try {
+        const res = await fetch("/api/feed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic: activeTopic }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          throw new Error(data.error || `Server error ${res.status}`);
+        }
+
+        stories = data.stories || [];
+        localStorage.setItem("savant-cache", JSON.stringify({ stories, time: Date.now() }));
+        renderStories();
+      } catch (err) {
+        renderError(err.message);
+      } finally {
+        loading = false;
+        clearInterval(loadingInterval);
+        document.getElementById("refreshBtn").disabled = false;
+        document.getElementById("refreshBtn").textContent = "↻ Refresh";
+      }
+    }
+
+    // ── Render ──────────────────────────────────────────────────
+    function renderLoading() {
+      document.getElementById("content").innerHTML = `
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p class="loading-msg" id="loadingMsg">${LOADING_MESSAGES[0]}</p>
+        </div>`;
+    }
+
+    function renderError(msg) {
+      document.getElementById("content").innerHTML = `
+        <div class="error-state">
+          <div class="error-box" onclick="fetchStories()">
+            <p class="error-text">${escapeHtml(msg)}<br><br>Tap to retry</p>
+          </div>
+        </div>`;
+    }
+
+    function renderStories() {
+      const savedIds = new Set(savedStories.map(s => s.id));
+      let list = showSaved ? savedStories : stories;
+
+      if (activeTopic !== "all" && !showSaved) {
+        list = list.filter(s => s.category === activeTopic);
+      }
+      if (activeTopic !== "all" && showSaved) {
+        list = list.filter(s => s.category === activeTopic);
+      }
+
+      if (list.length === 0) {
+        document.getElementById("content").innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">${showSaved ? "★" : "✦"}</div>
+            <p class="empty-text">${showSaved ? "No saved stories yet" : "No stories loaded. Tap refresh."}</p>
+          </div>`;
+        return;
+      }
+
+      document.getElementById("content").innerHTML = list.map(story => {
+        const saved = savedIds.has(story.id);
+        const expanded = expandedId === story.id;
+        const tagColor = TAG_COLORS[story.impactTag] || "#666";
+        const catIcon = CATEGORY_ICONS[story.category] || "✦";
+        const catLabel = TOPICS.find(t => t.id === story.category)?.label || story.category;
+        const ago = story.timestamp ? timeAgo(new Date(story.timestamp)) : "";
+
+        return `
+          <div class="story" onclick="toggleExpand('${story.id}')">
+            <div class="story-meta">
+              <span class="story-meta-icon">${catIcon}</span>
+              <span class="story-meta-cat">${escapeHtml(catLabel)}</span>
+              <span class="story-meta-sep">·</span>
+              <span class="story-meta-source">${escapeHtml(story.source || "")}</span>
+              <span class="story-meta-sep">·</span>
+              <span class="story-meta-time">${story.readTime || 2}m read</span>
+              <span class="impact-tag" style="background:${tagColor}18;color:${tagColor}">${escapeHtml(story.impactTag || "")}</span>
+            </div>
+            <div class="story-headline">${escapeHtml(story.headline)}</div>
+            <div class="story-summary ${expanded ? 'expanded' : ''}">${escapeHtml(story.summary)}</div>
+            <div class="story-actions">
+              ${story.sourceUrl ? `<a class="story-link" href="${escapeHtml(story.sourceUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ Source</a>` : ""}
+              <button class="save-btn ${saved ? 'saved' : ''}" onclick="event.stopPropagation(); toggleSave('${story.id}')">
+                ${saved ? "★ Saved" : "☆ Save"}
+              </button>
+              <span class="story-time">${ago}</span>
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    // ── Actions ─────────────────────────────────────────────────
+    function toggleExpand(id) {
+      expandedId = expandedId === id ? null : id;
+      renderStories();
+    }
+
+    function toggleSave(id) {
+      const allStories = [...stories, ...savedStories];
+      const story = allStories.find(s => s.id === id);
+      if (!story) return;
+
+      const exists = savedStories.find(s => s.id === id);
+      if (exists) {
+        savedStories = savedStories.filter(s => s.id !== id);
+      } else {
+        savedStories = [story, ...savedStories];
+      }
+
+      localStorage.setItem("savant-saved", JSON.stringify(savedStories));
+      updateSavedCount();
+      renderStories();
+    }
+
+    function updateSavedCount() {
+      document.getElementById("savedCount").textContent = savedStories.length;
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────
+    function timeAgo(date) {
+      const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+      if (seconds < 60) return "just now";
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+      return `${Math.floor(seconds / 86400)}d`;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    // ── Pull to refresh (mobile) ────────────────────────────────
+    let touchStartY = 0;
+    document.addEventListener("touchstart", e => {
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener("touchmove", e => {
+      const pullEl = document.getElementById("pullIndicator");
+      if (window.scrollY === 0 && e.touches[0].clientY - touchStartY > 80) {
+        pullEl.classList.add("visible");
+      } else {
+        pullEl.classList.remove("visible");
+      }
+    }, { passive: true });
+
+    document.addEventListener("touchend", () => {
+      const pullEl = document.getElementById("pullIndicator");
+      if (pullEl.classList.contains("visible")) {
+        pullEl.classList.remove("visible");
+        fetchStories();
+      }
+    });
+
+    // ── Service worker registration ─────────────────────────────
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+
+    // ── Go ──────────────────────────────────────────────────────
+    init();
+  </script>
+</body>
+</html>
