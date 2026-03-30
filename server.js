@@ -33,7 +33,9 @@ Each story object must have:
 
 Prioritize: actionability > novelty > comprehensiveness.
 Avoid: marketing language, hype, vague summaries, and ANY stories older than 2 days.
-Include: specific numbers, names, and takeaways when possible.`;
+Include: specific numbers, names, and takeaways when possible.
+
+CRITICAL RULES: 1) Only include stories from the last 24-48 hours. Every story must be recent. Include the approximate date in each summary. 2) Only cite top-tier sources: peer-reviewed journals (Nature, Science, Lancet, arXiv), major outlets (NYT, WSJ, Bloomberg, Reuters, Economist, FT, AP), respected tech publications (MIT Tech Review, Ars Technica, Wired, The Information), official sources (WHO, NIH, Fed, government releases), and established research institutions. Never cite content farms, listicles, SEO blogs, or low-quality aggregators. If you cannot find a high-quality source for a story, skip it.`;
 
 // ── Topic queries ──────────────────────────────────────────────
 const TOPIC_QUERIES = {
@@ -69,8 +71,7 @@ app.post("/api/feed", async (req, res) => {
     queries = [TOPIC_QUERIES[topic] || TOPIC_QUERIES.ai];
   }
 
-  const today = new Date().toISOString().split("T")[0];
-  const userMessage = `Today is ${today}. Find the most important stories from the LAST 1-2 DAYS ONLY in these areas:\n${queries.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n\nOnly include stories published within the last 1-2 days — nothing older. Return 5-6 stories. Remember: return ONLY the JSON object with a "stories" array, nothing else.`;
+  const userMessage = `Find the most important stories from the LAST 24-48 HOURS in these areas:\n${queries.map((q, i) => `${i + 1}. ${q}`).join("\n")}\n\nToday's date is ${new Date().toISOString().split("T")[0]}. Only include very recent stories from top-tier, reputable sources — peer-reviewed research, major news outlets, official reports. Return 5-6 stories. Return ONLY the JSON object with a "stories" array, nothing else.`;
 
   try {
     // ── Try OpenAI Responses API with web search first ───────
